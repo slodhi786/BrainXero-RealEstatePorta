@@ -69,5 +69,20 @@ namespace RealEstate.Presentation.WebApi.Controllers
             var properties = await _propertyService.SearchAsync(request);
             return Ok(properties);
         }
+
+        [HttpGet("list")]
+        public async Task<IActionResult> GetAll([FromQuery] PropertyQueryParameters queryParams)
+        {
+            var (items, totalCount) = await _propertyService.GetAllAsync(queryParams);
+
+            return Ok(new
+            {
+                success = true,
+                totalCount,
+                page = queryParams.Page,
+                pageSize = queryParams.PageSize,
+                data = items
+            });
+        }
     }
 }

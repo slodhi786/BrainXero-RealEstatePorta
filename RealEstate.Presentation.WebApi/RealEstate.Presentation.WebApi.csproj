@@ -4,6 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,11 +14,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RealEstate.Infrastructure.Identity\RealEstate.Infrastructure.Identity.csproj" />
     <ProjectReference Include="..\RealEstate.Infrastructure.Persistence\RealEstate.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\RealEstate.Infrastructure.Common\RealEstate.Infrastructure.Common.csproj" />
   </ItemGroup>
 
 </Project>

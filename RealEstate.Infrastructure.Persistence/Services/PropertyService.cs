@@ -24,6 +24,35 @@ namespace RealEstate.Infrastructure.Persistence.Services
             return _mapper.Map<List<PropertyDto>>(properties);
         }
 
+        public async Task<(IEnumerable<PropertyDto> Items, int TotalCount)> GetAllAsync(PropertyQueryParameters queryParams)
+        {
+            var query = _db.Properties.AsQueryable();
+
+            // Sorting
+            if (!string.IsNullOrEmpty(queryParams.SortBy))
+            {
+                query = queryParams.SortBy.ToLower() switch
+                {
+                    "title" => queryParams.SortOrder == "desc" ? query.OrderByDescending(p => p.Title) : query.OrderBy(p => p.Title),
+                    "price" => queryParams.SortOrder == "desc" ? query.OrderByDescending(p => p.Price) : query.OrderBy(p => p.Price),
+                    "bedrooms" => queryParams.SortOrder == "desc" ? query.OrderByDescending(p => p.Bedrooms) : query.OrderBy(p => p.Bedrooms),
+                    _ => queryParams.SortOrder == "desc" ? query.OrderByDescending(p => p.Price) : query.OrderBy(p => p.Price)
+                };
+            }
+
+            // Total count before paging
+            var totalCount = await query.CountAsync();
+
+            // Paging
+            var properties = await query
+                .Skip((queryParams.Page - 1) * queryParams.PageSize)
+                .Take(queryParams.PageSize)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<IEnumerable<PropertyDto>>(properties);
+            return (mapped, totalCount);
+        }
+
         public async Task<PropertyDto> GetByIdAsync(Guid id)
         {
             var property = await _db.Properties.FirstOrDefaultAsync(p => p.Id == id);

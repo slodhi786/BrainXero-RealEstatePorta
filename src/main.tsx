@@ -1,11 +1,14 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import { RouterProvider } from 'react-router-dom';
-import { router } from './router';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router";
+import { ServicesProvider } from "@/di/services.provider";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ServicesProvider>
+      <RouterProvider router={router} />
+    </ServicesProvider>
   </React.StrictMode>
 );

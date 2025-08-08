@@ -34,7 +34,7 @@ type Actions = {
     dto: Partial<PropertyDto>
   ) => Promise<PropertyDto | undefined>;
   remove: (id: string) => Promise<boolean>;
-
+  toggleFavorite: (propertyId: string, currentUserId: string) => Promise<void>;
   clearSelected: () => void;
 };
 
@@ -165,6 +165,77 @@ export function createPropertyStore(
           traceId: (err as any)?.traceId,
         });
         return false;
+      }
+    },
+
+    toggleFavorite: async (propertyId: any, currentUserId: any) => {
+      const s = get();
+      const prevList = s.properties;
+      const prevSelected = s.selected;
+      const isDetail = prevSelected?.id === propertyId;
+
+      // Is it currently favorited by this user?
+      const hasFavOnList = prevList.some(
+        (p) =>
+          p.id === propertyId &&
+          p.favoritedBy?.some(
+            (f: { userId: any }) => f.userId === currentUserId
+          )
+      );
+      const hasFavOnSelected =
+        isDetail &&
+        prevSelected?.favoritedBy?.some(
+          (f: { userId: any }) => f.userId === currentUserId
+        );
+      const willFavorite = !(hasFavOnList || hasFavOnSelected);
+
+      const apply = (p: PropertyDto): PropertyDto => {
+        const has = p.favoritedBy?.some(
+          (f: { userId: any }) => f.userId === currentUserId
+        );
+        if (willFavorite && !has) {
+          return {
+            ...p,
+            favoritedBy: [
+              ...(p.favoritedBy ?? []),
+              { userId: currentUserId, propertyId: p.id } as any,
+            ],
+          };
+        }
+        if (!willFavorite && has) {
+          return {
+            ...p,
+            favoritedBy: (p.favoritedBy ?? []).filter(
+              (f: { userId: any }) => f.userId !== currentUserId
+            ),
+          };
+        }
+        return p;
+      };
+
+      // optimistic update
+      set({
+        properties: prevList.map((p) => (p.id === propertyId ? apply(p) : p)),
+        selected:
+          isDetail && prevSelected ? apply(prevSelected) : s.selected ?? null,
+        error: undefined,
+        traceId: undefined,
+      });
+
+      try {
+        if (willFavorite) {
+          await services.propertyService.addFavorite(propertyId);
+        } else {
+          const ok = await services.propertyService.removeFavorite(propertyId);
+          if (!ok) throw new Error("Could not remove favorite");
+        }
+      } catch (e: any) {
+        // rollback
+        set({ properties: prevList, selected: prevSelected });
+        set({
+          error: e?.message ?? "Failed to update favorite",
+          traceId: (e as any)?.traceId,
+        });
       }
     },
 

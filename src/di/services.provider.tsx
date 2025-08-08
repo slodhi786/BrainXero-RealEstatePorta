@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { AxiosPropertyService } from "@/services/properties.service";
+import { AxiosPropertyService } from "@/services/property.service";
 import { ServicesContext, type Services } from "./services.context";
 
 export function ServicesProvider({ children }: { children: ReactNode }) {

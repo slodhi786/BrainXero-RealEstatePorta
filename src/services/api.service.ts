@@ -1,46 +1,91 @@
+/* src/services/api.service.ts */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import type { ApiResponse } from "@/types/api";
 
+// Base axios instance
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5127/api",
   withCredentials: false,
 });
 
-// A typed error we can catch in UI
 export class ApiError<T = unknown> extends Error {
   statusCode: number;
   traceId?: string;
   payload?: T;
-  constructor(msg: string, statusCode: number, traceId?: string, payload?: T) {
-    super(msg);
+  constructor(
+    message: string,
+    statusCode: number,
+    traceId?: string,
+    payload?: T
+  ) {
+    super(message);
     this.statusCode = statusCode;
     this.traceId = traceId;
     this.payload = payload;
   }
 }
 
-// unwrap success and throw ApiError on fail (including 400 validation + 500 global middleware)
+// Response interceptor: unwrap ApiResponse<T>, or return raw data if not wrapped
 api.interceptors.response.use(
   (resp) => {
-    const body = resp.data as ApiResponse<any>;
-    // Successful 2xx with ApiResponse.Ok
-    if (body?.statusCode >= 200 && body?.statusCode < 300) {
-      return body.data;
-    }
-    // Rare case: server returned ApiResponse but not 2xx
-    throw new ApiError(body?.message ?? "Request failed", body?.statusCode ?? resp.status, body?.traceId, body);
-  },
-  (error: AxiosError<ApiResponse<any>>) => {
-    if (error.response?.data) {
-      const body = error.response.data;
+    const body = resp.data as any;
+
+    // Detect our ApiResponse<T> shape
+    if (body && typeof (body as any).statusCode === "number") {
+      const b = body as ApiResponse<any>;
+      if (b.statusCode >= 200 && b.statusCode < 300) return b.data as any;
       throw new ApiError(
-        body.message ?? "Request failed",
-        body.statusCode ?? error.response.status,
-        body.traceId,
-        body
+        b.message ?? "Request failed",
+        b.statusCode,
+        b.traceId,
+        b
       );
     }
+
+    // Non-wrapped endpoints: return raw data
+    return resp.data as any;
+  },
+  (error: AxiosError<ApiResponse<any>>) => {
+    // Server responded with error and used ApiResponse<T>
+    if (error.response?.data) {
+      const b = error.response.data;
+      throw new ApiError(
+        b.message ?? "Request failed",
+        b.statusCode ?? error.response.status ?? 0,
+        b.traceId,
+        b
+      );
+    }
+    // Network / CORS / unknown
     throw new ApiError(error.message || "Network error", error.status ?? 0);
   }
 );
+
+// Data-centric facade: methods return payload T (not AxiosResponse<T>)
+export type DataAxios = {
+  get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  post<T = unknown>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T>;
+  put<T = unknown>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T>;
+  delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>;
+};
+
+// Re-export the same axios instance but typed to return payloads
+export const http = api as unknown as DataAxios;
+
+// Optional helpers
+export function setAuthToken(token?: string) {
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common["Authorization"];
+  }
+}

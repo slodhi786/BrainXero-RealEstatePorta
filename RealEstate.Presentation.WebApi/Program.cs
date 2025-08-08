@@ -103,7 +103,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
+
 var app = builder.Build();
+
+app.UseCors();
 
 // Seed sample data
 using var scope = app.Services.CreateScope();

@@ -10,6 +10,7 @@ using RealEstate.Infrastructure.Common.Middleware;
 using RealEstate.Infrastructure.Identity.Services;
 using RealEstate.Infrastructure.Persistence.Data;
 using RealEstate.Infrastructure.Persistence.Services;
+using RealEstate.Presentation.Contracts.Common;
 using System.Reflection;
 using System.Text;
 
@@ -44,13 +45,10 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
                 kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
             );
 
-        return new BadRequestObjectResult(new
-        {
-            success = false,
-            message = "Validation failed.",
-            errors,
-            timestamp = DateTime.UtcNow
-        });
+        var payload = new { errors, traceId = context.HttpContext.TraceIdentifier };
+
+        var resp = ApiResponse<object>.Fail(StatusCodes.Status400BadRequest, "Validation failed.", payload);
+        return new BadRequestObjectResult(resp);
     };
 });
 

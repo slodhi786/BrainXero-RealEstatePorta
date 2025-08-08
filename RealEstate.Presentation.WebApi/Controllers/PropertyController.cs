@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RealEstate.Application.DTOs.Properties;
 using RealEstate.Application.Interfaces;
+using RealEstate.Presentation.Contracts.Common;
 
 namespace RealEstate.Presentation.WebApi.Controllers
 {
@@ -21,16 +22,29 @@ namespace RealEstate.Presentation.WebApi.Controllers
         public async Task<IActionResult> GetAll()
         {
             var properties = await _propertyService.GetAllAsync();
-            return Ok(properties);
+            var totalCount = properties.Count;
+
+            var payload = new SearchResult<PropertyDto>
+            {
+                Items = properties,
+                TotalCount = totalCount
+            };
+
+            return Ok(ApiResponse<SearchResult<PropertyDto>>.Ok(payload, "All properties."));
         }
 
         // GET: api/property/{id}
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> GetById(string id)
         {
-            var property = await _propertyService.GetByIdAsync(id);
-            if (property == null) return NotFound();
-            return Ok(property);
+            if (!Guid.TryParse(id, out var guid))
+                return BadRequest(ApiResponse<object>.Fail(400, $"The value '{id}' is not a valid GUID."));
+
+            var dto = await _propertyService.GetByIdAsync(guid);
+
+            return dto is not null 
+                ? Ok(ApiResponse<PropertyDto>.Ok(dto, "Property loaded.")) 
+                : Ok(ApiResponse<object>.Fail(404, "Property not found."));
         }
 
         // POST: api/property
@@ -38,8 +52,12 @@ namespace RealEstate.Presentation.WebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreatePropertyRequest request)
         {
-            var property = await _propertyService.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = property.Id }, property);
+            var created = await _propertyService.CreateAsync(request);
+
+            return created is not null 
+                ? Ok(ApiResponse<PropertyDto>.Ok(created, "Property created.")) 
+                : Ok(ApiResponse<PropertyDto>.Ok(null, "Could not create the property."));
+
         }
 
         // PUT: api/property/{id}
@@ -48,8 +66,9 @@ namespace RealEstate.Presentation.WebApi.Controllers
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePropertyRequest request)
         {
             var updated = await _propertyService.UpdateAsync(id, request);
-            if (!updated) return NotFound();
-            return NoContent();
+            return updated 
+                ? Ok(ApiResponse<bool>.Ok(updated, "Property updated.")) 
+                : Ok(ApiResponse<bool>.Ok(updated, "Could not update the property."));
         }
 
         // DELETE: api/property/{id}
@@ -58,16 +77,27 @@ namespace RealEstate.Presentation.WebApi.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _propertyService.DeleteAsync(id);
-            if (!deleted) return NotFound();
-            return NoContent();
+
+            return deleted 
+                ? Ok(ApiResponse<bool>.Ok(deleted, "Property deleted.")) 
+                : Ok(ApiResponse<bool>.Ok(deleted, "Could not delete the property."));
         }
 
         // POST: api/property/search
         [HttpPost("search")]
         public async Task<IActionResult> Search([FromBody] SearchPropertyRequest request)
         {
-            var properties = await _propertyService.SearchAsync(request);
-            return Ok(properties);
+            var searchResult = await _propertyService.SearchAsync(request);
+            var items = searchResult.ToList();
+            var totalCount = items.Count;
+
+            var payload = new SearchResult<PropertyDto>
+            {
+                Items = items,
+                TotalCount = totalCount
+            };
+
+            return Ok(ApiResponse<SearchResult<PropertyDto>>.Ok(payload, "Search completed."));
         }
 
         [HttpGet("list")]
@@ -75,14 +105,15 @@ namespace RealEstate.Presentation.WebApi.Controllers
         {
             var (items, totalCount) = await _propertyService.GetAllAsync(queryParams);
 
-            return Ok(new
+            var payload = new PagedResult<PropertyDto>
             {
-                success = true,
-                totalCount,
-                page = queryParams.Page,
-                pageSize = queryParams.PageSize,
-                data = items
-            });
+                Items = items,
+                TotalCount = totalCount,
+                Page = queryParams.Page,
+                PageSize = queryParams.PageSize
+            };
+
+            return Ok(ApiResponse<PagedResult<PropertyDto>>.Ok(payload, "Properties fetched."));
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RealEstate.Application.DTOs.Auth;
 using RealEstate.Application.Interfaces;
+using RealEstate.Presentation.Contracts.Common;
 
 namespace RealEstate.Presentation.WebApi.Controllers
 {
@@ -19,14 +20,14 @@ namespace RealEstate.Presentation.WebApi.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
-            return Ok(result);
+            return Ok(ApiResponse<AuthResponse>.Ok(result, "Registration successful."));
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
-            return Ok(result);
+            return Ok(ApiResponse<AuthResponse>.Ok(result, "Login successful."));
         }
     }
 }

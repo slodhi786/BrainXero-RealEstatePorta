@@ -21,6 +21,7 @@
     <ProjectReference Include="..\RealEstate.Infrastructure.Identity\RealEstate.Infrastructure.Identity.csproj" />
     <ProjectReference Include="..\RealEstate.Infrastructure.Persistence\RealEstate.Infrastructure.Persistence.csproj" />
     <ProjectReference Include="..\RealEstate.Infrastructure.Common\RealEstate.Infrastructure.Common.csproj" />
+    <ProjectReference Include="..\RealEstate.Presentation.Contracts\RealEstate.Presentation.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

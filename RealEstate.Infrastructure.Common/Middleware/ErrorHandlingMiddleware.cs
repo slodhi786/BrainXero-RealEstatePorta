@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using System.Net;
+using RealEstate.Presentation.Contracts.Common;
 using System.Text.Json;
 
 namespace RealEstate.Infrastructure.Common.Middleware
@@ -28,19 +28,21 @@ namespace RealEstate.Infrastructure.Common.Middleware
             {
                 _logger.LogError(ex, "Unhandled exception occurred");
 
-                context.Response.ContentType = "application/json";
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-                var response = new
+                var details = _isDevelopment ? ex.Message : null;
+                var payload = new
                 {
-                    success = false,
-                    message = "An unexpected error occurred.",
-                    details = _isDevelopment ? ex.Message : null,
-                    timestamp = DateTime.UtcNow
+                    details,
+                    traceId = context.TraceIdentifier
                 };
 
-                var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
+                var resp = ApiResponse<object>.Fail(StatusCodes.Status500InternalServerError,
+                    "An unexpected error occurred.", payload);
+
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = resp.StatusCode;
+
+                var jsonResponse = JsonSerializer.Serialize(resp);
+                await context.Response.WriteAsync(jsonResponse);
             }
         }
     }

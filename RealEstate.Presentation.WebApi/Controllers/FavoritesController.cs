@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using RealEstate.Application.DTOs.Properties;
 using RealEstate.Application.Interfaces;
+using RealEstate.Presentation.Contracts.Common;
 using System.Security.Claims;
 
 namespace RealEstate.Presentation.WebApi.Controllers
@@ -33,8 +36,10 @@ namespace RealEstate.Presentation.WebApi.Controllers
         {
             var userId = GetCurrentUserId();
             var added = await _favoriteService.AddToFavoritesAsync(userId, propertyId);
-            if (!added) return NotFound();
-            return Ok(new { success = true });
+
+            return added
+                ? Ok(ApiResponse<object>.Ok(null, "Added to favorites."))
+                : BadRequest(ApiResponse<object>.Fail(400, "Could not add favorite."));
         }
 
         [Authorize]
@@ -43,8 +48,10 @@ namespace RealEstate.Presentation.WebApi.Controllers
         {
             var userId = GetCurrentUserId();
             var removed = await _favoriteService.RemoveFromFavoritesAsync(userId, propertyId);
-            if (!removed) return NotFound();
-            return Ok(new { success = true });
+
+            return removed 
+                ? Ok(ApiResponse<bool>.Ok(removed, "Property removed from favorites."))
+                : Ok(ApiResponse<bool>.Ok(removed, "Could not remove property from favorites."));
         }
 
         [Authorize]
@@ -53,7 +60,7 @@ namespace RealEstate.Presentation.WebApi.Controllers
         {
             var userId = GetCurrentUserId();
             var favorites = await _favoriteService.GetFavoritesAsync(userId);
-            return Ok(favorites);
+            return Ok(ApiResponse<IEnumerable<PropertyDto>>.Ok(favorites, "Favorites loaded."));
         }
     }
 }

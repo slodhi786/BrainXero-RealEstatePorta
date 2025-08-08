@@ -57,7 +57,7 @@ RealEstatePortal/
 
 ### 1️⃣ Clone & Restore
 ```powershell
-git clone <your-repo-url>
+git clone https://github.com/slodhi786/RealEstatePortal.git
 cd RealEstatePortal
 dotnet restore
 ```
@@ -177,73 +177,6 @@ GET /api/property?page=1&pageSize=5&sortBy=price&sortOrder=asc
 ```http
 POST /api/favorites/add/8f9a6d60-8b1a-4f1d-b17f-4e76dbf77b15
 Authorization: Bearer <token>
-```
-
----
-
-## 🗄 EF Core Handy Commands
-
-```powershell
-# Add migration
-dotnet ef migrations add <Name> `
-  --project RealEstate.Infrastructure.Persistence `
-  --startup-project RealEstate.Presentation.WebApi
-
-# Update DB
-dotnet ef database update `
-  --project RealEstate.Infrastructure.Persistence `
-  --startup-project RealEstate.Presentation.WebApi
-
-# Drop DB (dev only)
-dotnet ef database drop `
-  --project RealEstate.Infrastructure.Persistence `
-  --startup-project RealEstate.Presentation.WebApi --force
-```
-
-(Optional scripts if you added them):
-- `reset-db.ps1` → drop + recreate + seed
-- `update-db.ps1` → add optional migration + update
-
----
-
-## 🌐 Swagger / OpenAPI
-
-Install (if not already):
-```powershell
-dotnet add .\RealEstate.Presentation.WebApi\RealEstate.Presentation.WebApi.csproj package Swashbuckle.AspNetCore
-```
-
-Enable in `Program.cs`:
-```csharp
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(/* XML + JWT security */);
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.MapControllers();
-```
-
-Enable XML docs in WebApi `.csproj`:
-```xml
-<PropertyGroup>
-  <TargetFramework>net9.0</TargetFramework>
-  <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  <NoWarn>$(NoWarn);1591</NoWarn>
-</PropertyGroup>
-```
-
----
-
-## 🔒 CORS (Frontend Friendly)
-```csharp
-builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
-    p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
-app.UseCors();
 ```
 
 ---

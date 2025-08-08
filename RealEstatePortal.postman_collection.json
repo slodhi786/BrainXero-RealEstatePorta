@@ -212,7 +212,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://localhost:5001"
+      "value": "https://localhost:5127"
     },
     {
       "key": "jwtToken",

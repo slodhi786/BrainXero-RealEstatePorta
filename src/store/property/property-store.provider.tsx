@@ -4,7 +4,7 @@ import { createPropertyStore } from "./property.store";
 import { useServices } from "@/di/use-services";
 
 export function PropertyStoreProvider({ children }: { children: ReactNode }) {
-  const services = useServices();
-  const store = useMemo(() => createPropertyStore(services), [services]);
+  const { propertyService } = useServices();
+  const store = useMemo(() => createPropertyStore({ propertyService }), [propertyService]); 
   return <PropertyStoreContext.Provider value={store}>{children}</PropertyStoreContext.Provider>;
 }

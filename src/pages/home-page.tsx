@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { PropertyStoreProvider } from "@/store/property/property-store.provider";
 import { usePropertyStore } from "@/store/property/use-property-store";
 
 function HomePageInner() {
@@ -79,7 +78,7 @@ function HomePageInner() {
         {Array.isArray(properties) &&
           properties.map((p) => (
             <div key={p.id} className="border p-4 shadow rounded">
-              <Link to={`/properties/${p.id}`} className="block">
+              <Link to={`/property/${p.id}`} className="block">
                 <img
                   src={p.imageUrls?.[0]}
                   alt={p.title}
@@ -130,9 +129,5 @@ function HomePageInner() {
 }
 
 export default function HomePage() {
-  return (
-    <PropertyStoreProvider>
-      <HomePageInner />
-    </PropertyStoreProvider>
-  );
+  return <HomePageInner />;
 }

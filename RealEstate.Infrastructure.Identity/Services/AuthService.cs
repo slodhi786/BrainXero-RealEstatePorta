@@ -63,6 +63,9 @@ namespace RealEstate.Infrastructure.Identity.Services
 
             return Task.FromResult(new AuthResponse
             {
+                UserId = user.Id,
+                UserName = user.UserName ?? user.Email!,
+                Email = user.Email!,
                 Token = new JwtSecurityTokenHandler().WriteToken(token),
                 Expiration = token.ValidTo
             });

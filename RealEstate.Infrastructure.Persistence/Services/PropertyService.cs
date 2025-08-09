@@ -24,11 +24,11 @@ namespace RealEstate.Infrastructure.Persistence.Services
             return _mapper.Map<List<PropertyDto>>(properties);
         }
 
-        public async Task<(IEnumerable<PropertyDto> Items, int TotalCount)> GetAllAsync(PropertyQueryParameters queryParams)
+        public async Task<(IEnumerable<PropertyDto> Items, int TotalCount)> GetAllAsync(PropertyQueryParameters queryParams, string userId = null)
         {
             var query = _db.Properties.AsQueryable();
 
-            // Sorting
+            // Sorting (unchanged)
             if (!string.IsNullOrEmpty(queryParams.SortBy))
             {
                 query = queryParams.SortBy.ToLower() switch
@@ -40,16 +40,30 @@ namespace RealEstate.Infrastructure.Persistence.Services
                 };
             }
 
-            // Total count before paging
             var totalCount = await query.CountAsync();
 
-            // Paging
+            // Page first
             var properties = await query
                 .Skip((queryParams.Page - 1) * queryParams.PageSize)
                 .Take(queryParams.PageSize)
                 .ToListAsync();
 
-            var mapped = _mapper.Map<IEnumerable<PropertyDto>>(properties);
+            // Get favorite ids for this user (if authenticated)
+            HashSet<Guid> favIds = new();
+            if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var userGuid))
+            {
+                favIds = (await _db.Favorites
+                    .Where(f => f.UserId == userGuid) // now Guid == Guid
+                    .Select(f => f.PropertyId)
+                    .ToListAsync())
+                    .ToHashSet();
+            }
+
+            // Map and set IsFavorite
+            var mapped = _mapper.Map<List<PropertyDto>>(properties);
+            foreach (var dto in mapped)
+                dto.IsFavorite = favIds.Contains(dto.Id);
+
             return (mapped, totalCount);
         }
 

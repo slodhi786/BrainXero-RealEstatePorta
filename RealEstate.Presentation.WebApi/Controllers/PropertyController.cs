@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using RealEstate.Application.DTOs.Properties;
 using RealEstate.Application.Interfaces;
 using RealEstate.Presentation.Contracts.Common;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace RealEstate.Presentation.WebApi.Controllers
 {
@@ -103,7 +105,14 @@ namespace RealEstate.Presentation.WebApi.Controllers
         [HttpGet("list")]
         public async Task<IActionResult> GetAll([FromQuery] PropertyQueryParameters queryParams)
         {
-            var (items, totalCount) = await _propertyService.GetAllAsync(queryParams);
+            string? userId = null;
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                      ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            }
+
+            var (items, totalCount) = await _propertyService.GetAllAsync(queryParams, userId);
 
             var payload = new PagedResult<PropertyDto>
             {

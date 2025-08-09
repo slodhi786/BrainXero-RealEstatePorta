@@ -8,5 +8,6 @@
         public decimal Price { get; set; }
         public string Address { get; set; } = default!;
         public List<string> ImageUrls { get; set; } = new();
+        public bool IsFavorite { get; set; }
     }
 }

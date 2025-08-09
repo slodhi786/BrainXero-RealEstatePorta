@@ -32,7 +32,7 @@ export default function MyFavoritesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {items.map((p) => (
           <Link
-            to={`/properties/${p.id}`}
+            to={`/property/${p.id}`}
             key={p.id}
             className="border p-4 rounded shadow"
           >

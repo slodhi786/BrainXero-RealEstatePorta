@@ -1,59 +1,57 @@
-import { usePropertyStore } from "@/store/property/use-property-store";
-//import { useUserStore } from "@/store/user.store";
+import { useState } from "react";
+import { Heart } from "lucide-react";
+import { useUserStore } from "@/store/user/use-user-store";
+import { useServices } from "@/di/use-services";
+import type { PropertyDto } from "@/types/property";
 
-export function FavoriteButton({
-  propertyId,
-  compact = false,
-}: {
-  propertyId: string;
-  compact?: boolean;
-}) {
-  const toggleFavorite = usePropertyStore((s) => s.toggleFavorite);
-  const property = usePropertyStore(
-    (s) => s.properties.find((p) => p.id === propertyId) || s.selected
+interface Props {
+  property: PropertyDto;
+}
+
+export default function FavoriteButton({ property }: Props) {
+  const user = useUserStore((s) => s.user);
+  const { propertyService } = useServices();
+  const [isFav, setIsFav] = useState(
+    Boolean(property.isFavorite)
   );
-  const userId = "B23399DC-5E9D-4F89-9CF7-08DDD60B90C8"; //useUserStore((s) => s.id);
+  const [loading, setLoading] = useState(false);
 
-  if (!property) return null;
-
-  const isFavorited = !!property.favoritedBy?.some(
-    (f: { userId: string }) => f.userId === userId
-  );
-  const count = property.favoritedBy?.length ?? 0;
-
-  const onClick = () => {
-    if (!userId) {
-      alert("Please sign in to favorite.");
+  async function toggleFavorite() {
+    if (!user) {
+      alert("Please sign in to add favorites.");
       return;
     }
-    void toggleFavorite(propertyId, userId);
-  };
 
-  if (compact) {
-    return (
-      <button
-        onClick={onClick}
-        className={`inline-flex items-center gap-1 text-sm ${
-          isFavorited ? "text-red-600" : "text-gray-600"
-        }`}
-        aria-pressed={isFavorited}
-        title={isFavorited ? "Unfavorite" : "Favorite"}
-      >
-        <span>{isFavorited ? "♥" : "♡"}</span>
-        <span>{count}</span>
-      </button>
-    );
+    const newState = !isFav;
+    setIsFav(newState);
+    setLoading(true);
+
+    try {
+      if (newState) {
+        await propertyService.addFavorite(property.id);
+      } else {
+        await propertyService.removeFavorite(property.id);
+      }
+    } catch (err) {
+      console.error(err);
+      // revert if API fails
+      setIsFav(!newState);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <button
-      onClick={onClick}
-      className={`rounded-xl border px-3 py-1 ${
-        isFavorited ? "border-red-300 bg-red-50 text-red-700" : ""
+      type="button"
+      onClick={toggleFavorite}
+      disabled={loading}
+      className={`flex items-center gap-1 px-2 py-1 rounded ${
+        isFav ? "text-red-500" : "text-gray-500"
       }`}
-      aria-pressed={isFavorited}
     >
-      {isFavorited ? "♥ Favorited" : "♡ Favorite"} {count ? `(${count})` : ""}
+      <Heart className={isFav ? "fill-current" : ""} size={18} />
+      <span>{isFav ? "Unfavorite" : "Favorite"}</span>
     </button>
   );
 }

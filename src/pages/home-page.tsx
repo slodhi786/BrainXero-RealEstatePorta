@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { usePropertyStore } from "@/store/property/use-property-store";
-import { FavoriteButton } from "@/components/common/favorite-button";
+import FavoriteButton from "@/components/common/favorite-button";
 
 function HomePageInner() {
   const {
@@ -96,7 +96,7 @@ function HomePageInner() {
                   <span>🚗 {p.carSpots}</span>
                 </div>
               </Link>
-              <FavoriteButton propertyId={p.id} compact />
+              <FavoriteButton property={p} />
             </div>
           ))}
 

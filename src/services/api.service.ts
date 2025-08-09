@@ -1,11 +1,11 @@
 /* src/services/api.service.ts */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
-import type { ApiResponse } from "@/types/api";
+import type { ApiResponse } from "@/types/api-response";
 
 // Base axios instance
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5127/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://localhost:7047/api",
   withCredentials: false,
 });
 
@@ -25,6 +25,19 @@ export class ApiError<T = unknown> extends Error {
     this.payload = payload;
   }
 }
+
+// Request interceptor: attach token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("access_token"); // ensure correct key!
+  config.headers = config.headers ?? {};
+  if (token) (config.headers as any).Authorization = `Bearer ${token}`;
+
+  // console.log("[REQ] url:", (config.baseURL ?? "") + (config.url ?? ""));
+  // console.log("[REQ] hasAuth?", !!(config.headers as any).Authorization);
+  // console.log("[REQ] headers:", config.headers);
+
+  return config;
+});
 
 // Response interceptor: unwrap ApiResponse<T>, or return raw data if not wrapped
 api.interceptors.response.use(

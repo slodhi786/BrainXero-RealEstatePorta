@@ -13,6 +13,7 @@ export type PropertyDto = {
   description: string;
   imageUrls: string[];
   favoritedBy: FavoriteDto[];
+  isFavorite: boolean;
 };
 
 export type PropertyQuery = {

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { usePropertyStore } from "@/store/property/use-property-store";
-import { FavoriteButton } from "@/components/common/favorite-button";
+import FavoriteButton from "@/components/common/favorite-button";
 
 function PropertyDetailInner() {
   const { id } = useParams<{ id: string }>();
@@ -86,7 +86,7 @@ function PropertyDetailInner() {
           <div className="text-xl font-semibold">
             PKR {selected.price.toLocaleString()}
           </div>
-          <FavoriteButton propertyId={selected.id} />
+          <FavoriteButton property={selected} />
           <div className="mt-2 text-sm">
             <span className="mr-4">🛏 {selected.bedrooms} Bedrooms</span>
             <span className="mr-4">🛁 {selected.bathrooms} Bathrooms</span>

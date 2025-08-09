@@ -1,6 +1,6 @@
 // src/services/property-service.ts
 import { http } from "./api.service";
-import type { PagedResult } from "@/types/api";
+import type { PagedResult } from "@/types/paged-result";
 import type { PropertyDto, PropertyQuery } from "@/types/property";
 
 export interface IPropertyService {

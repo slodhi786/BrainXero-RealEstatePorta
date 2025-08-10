@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link, useNavigate } from "react-router-dom";
 import { useUserStore } from "@/store/user/use-user-store";
 
 export default function AppHeader() {
-  const user = useUserStore((s) => s.user);
+  const { user } = useUserStore((u) => u);
   const isAuth = useUserStore(
     (s: { isAuthenticated: boolean }) => s.isAuthenticated
   );
@@ -40,7 +39,7 @@ export default function AppHeader() {
           ) : (
             <>
               <span className="hidden sm:inline text-slate-600">
-                Hi, {user?.firstName + "" + user?.lastName}
+                Hi, {`${user?.firstName}  ${user?.lastName}`}
               </span>
               <button
                 className="px-3 py-1 border rounded hover:bg-slate-50"

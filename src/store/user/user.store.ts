@@ -13,6 +13,7 @@ export type UserState = {
   token?: string;
   isAuthenticated: boolean;
   loading: boolean;
+  error?: boolean;
   message?: string;
   traceId?: string;
 
@@ -42,6 +43,7 @@ export function createUserStore(services: Services): StoreApi<UserState> {
                 message: message,
                 isAuthenticated: false,
                 token: undefined,
+                error: true,
               });
               setAuthToken(undefined);
               localStorage.removeItem("access_token");
@@ -53,6 +55,7 @@ export function createUserStore(services: Services): StoreApi<UserState> {
               isAuthenticated: false,
               token: undefined,
               user: undefined,
+              error: false,
             });
             setAuthToken(undefined);
             localStorage.removeItem("access_token");
@@ -63,6 +66,7 @@ export function createUserStore(services: Services): StoreApi<UserState> {
               message: "Registration failed | " + e,
               isAuthenticated: false,
               token: undefined,
+              error: true,
             });
             setAuthToken(undefined);
             localStorage.removeItem("access_token");
@@ -95,6 +99,8 @@ export function createUserStore(services: Services): StoreApi<UserState> {
               user: {
                 id: data.userId,
                 userName: data.userName,
+                firstName: data.firstName,
+                lastName: data.lastName,
                 email: data.email,
               },
               token: data.token,

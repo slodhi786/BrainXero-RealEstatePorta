@@ -1,13 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUserStore } from "@/store/user/use-user-store";
 
 export default function LoginPage() {
-  const login = useUserStore((s: any) => s.login);
-  const loading = useUserStore((s: any) => s.loading);
-  const error = useUserStore((s: any) => s.error);
-  const traceId = useUserStore((s: any) => s.traceId);
+  const { login, loading, error, traceId } = useUserStore((u) => u);
 
   const { state } = useLocation() as {
     state?: { email?: string; redirectTo?: string };

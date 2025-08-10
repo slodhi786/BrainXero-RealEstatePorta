@@ -1,69 +1,185 @@
-# React + TypeScript + Vite
+# Real Estate Portal — Frontend (React + Vite + TypeScript)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the web frontend for the Real Estate Portal. It implements user authentication, property browsing with server‑side pagination/filters/sorting, property detail pages, and favorites with optimistic UI updates.
 
-Currently, two official plugins are available:
+> **Monorepo:** This folder lives under `/frontend` in `BrainXero-RealEstatePorta`. The backend is in `/backend`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Auth:** Register, Login (JWT), persisted session in `localStorage` and axios `Authorization` header.
+- **Lists:** Server‑side pagination, sorting, and filters (search, city, type, price, beds, baths).
+- **Details:** Property detail page with gallery and Google Maps link.
+- **Favorites:** Add/remove favorites with optimistic UI and rollback on failure.
+- **State:** Lightweight global state with **Zustand** (vanilla store + Context Provider), DI via `Services`.
+- **Styling:** TailwindCSS, Lucide icons.
+- **Type‑safe:** Full TypeScript types for DTOs and API responses.
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- React 18, Vite, TypeScript
+- React Router
+- Zustand (vanilla store + context pattern)
+- Axios
+- TailwindCSS
+- Lucide React
+- ESLint + Prettier
+
+---
+
+## Prerequisites
+
+- Node.js **18+** (or 20+)
+- **pnpm** (recommended) or npm/yarn
+- Backend API running (see `/backend` README)
+
+---
+
+## Setup
+
+### 1) Install dependencies
+```bash
+cd frontend
+pnpm install
+# or: npm install / yarn
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2) Environment
+Create `.env` in `/frontend`:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# API base URL (Backend)
+VITE_API_URL=http://localhost:5000
 ```
+> Adjust to match your backend port/host and CORS settings.
+
+### 3) Run
+```bash
+pnpm dev
+# or: npm run dev / yarn dev
+```
+Open `http://localhost:5173` (default Vite dev port).
+
+### 4) Build & Preview
+```bash
+pnpm build
+pnpm preview
+```
+
+---
+
+## Scripts
+Common package scripts (see `package.json`):
+```json
+{
+  "dev": "vite",
+  "build": "tsc && vite build",
+  "preview": "vite preview",
+  "lint": "eslint .",
+  "format": "prettier --check .",
+  "format:write": "prettier --write ."
+}
+```
+
+---
+
+## Project Structure
+
+```
+frontend/
+  ├─ src/
+  │  ├─ components/
+  │  │  └─ common/
+  │  ├─ pages/
+  │  │  ├─ HomePage.tsx
+  │  │  └─ PropertyDetailPage.tsx
+  │  ├─ store/
+  │  │  ├─ user/
+  │  │  │  ├─ user.store.ts
+  │  │  │  ├─ user-store.context.ts
+  │  │  │  └─ user-store.provider.tsx
+  │  │  └─ property/
+  │  │     ├─ property.store.ts
+  │  │     ├─ property-store.context.ts
+  │  │     └─ property-store.provider.tsx
+  │  ├─ services/
+  │  │  ├─ api.service.ts       # axios instance + setAuthToken
+  │  │  ├─ auth.service.ts      # returns ApiResponse<T>
+  │  │  └─ property.service.ts  # returns ApiResponse<T>
+  │  ├─ types/
+  │  ├─ utils/
+  │  │  └─ api.ts               # isOk(statusCode) helper
+  │  ├─ App.tsx
+  │  └─ main.tsx
+  └─ index.html
+```
+
+---
+
+## State & DI Pattern (Zustand)
+
+- Stores are **vanilla** Zustand stores created via factory functions that receive `Services` (DI).
+- Each store is exposed through a **Context Provider** (`*.provider.tsx`) and a **hook** (`use-*.ts`) to match the app’s pattern.
+- Example usage:
+```ts
+// get actions/state
+const loading = usePropertyStore(s => s.loading);
+const fetchList = usePropertyStore(s => s.fetchList);
+```
+
+---
+
+## API Contracts (Consuming)
+
+All API endpoints return a wrapper:
+```ts
+type ApiResponse<T> = {
+  statusCode: number;
+  message: string;
+  data?: T;
+  errors?: Record<string, string[]>;
+  traceId?: string;
+};
+```
+
+The frontend treats **2xx** codes as success:
+```ts
+isOk = (code?: number) => !!code && code >= 200 && code < 300;
+```
+
+- **Auth**
+  - `POST /auth/register` → `ApiResponse<AuthResponse | null>`
+  - `POST /auth/login` → `ApiResponse<AuthResponse>`
+- **Properties**
+  - `GET /property/list` → `ApiResponse<PagedResult<PropertyDto>>`
+  - `GET /property/{id}` → `ApiResponse<PropertyDto>`
+- **Favorites**
+  - `POST /favorite/add/{id}` → `ApiResponse<unknown>`
+  - `DELETE /favorite/remove/{id}` → `ApiResponse<boolean>`
+
+> On `401` responses, an axios interceptor clears auth and navigates to `/login`.
+
+---
+
+## Routes
+
+- `/` — Listings with server‑side pagination, filters, sorting
+- `/property/:id` — Property details page
+- `/login`, `/register` — Auth pages
+
+---
+
+## Notes for Reviewers
+
+- **Optimistic UI:** The favorites button updates instantly and rolls back on API failure.
+- **Error handling:** Store sets `message`/`traceId` for surfaceable errors. Validation errors from backend are available via `errors` in `ApiResponse`.
+- **Type‑safety:** DTOs and API responses are strongly typed; axios services unwrap to `ApiResponse<T>`.
+
+---
+
+## License
+
+MIT (see repository license file).

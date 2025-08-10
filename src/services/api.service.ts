@@ -1,4 +1,3 @@
-/* src/services/api.service.ts */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import type { ApiResponse } from "@/types/api-response";

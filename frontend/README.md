@@ -52,7 +52,8 @@ Create `.env` in `/frontend`:
 
 ```bash
 # API base URL (Backend)
-VITE_API_URL=http://localhost:5000
+# Must be https
+VITE_API_URL=https://localhost:7047/api
 ```
 > Adjust to match your backend port/host and CORS settings.
 

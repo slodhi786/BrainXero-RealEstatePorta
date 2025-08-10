@@ -4,7 +4,7 @@ import type { ApiResponse } from "@/types/api-response";
 
 // Base axios instance
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "https://localhost:7047/api",
+  baseURL: import.meta.env.VITE_API_URL,
   withCredentials: false,
 });
 

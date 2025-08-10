@@ -33,7 +33,7 @@ This is the web frontend for the Real Estate Portal. It implements user authenti
 ## Prerequisites
 
 - Node.js **18+** (or 20+)
-- **pnpm** (recommended) or npm/yarn
+- **npm** (recommended) or npm/yarn
 - Backend API running (see `/backend` README)
 
 ---
@@ -43,7 +43,7 @@ This is the web frontend for the Real Estate Portal. It implements user authenti
 ### 1) Install dependencies
 ```bash
 cd frontend
-pnpm install
+npm install
 # or: npm install / yarn
 ```
 
@@ -58,15 +58,15 @@ VITE_API_URL=http://localhost:5000
 
 ### 3) Run
 ```bash
-pnpm dev
+npm dev
 # or: npm run dev / yarn dev
 ```
 Open `http://localhost:5173` (default Vite dev port).
 
 ### 4) Build & Preview
 ```bash
-pnpm build
-pnpm preview
+npm build
+npm preview
 ```
 
 ---

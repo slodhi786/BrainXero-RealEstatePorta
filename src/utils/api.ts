@@ -1,0 +1,1 @@
+export const isOk = (code?: number) => !!code && code >= 200 && code < 300;

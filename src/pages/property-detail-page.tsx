@@ -1,26 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { http } from "@/services/api.service";
 import type { PropertyDto } from "@/types/property";
 import FavoriteButton from "@/components/common/favorite-button";
 import { MapPin } from "lucide-react";
 import FallbackImg from "@/components/common/fallback-Img";
+import { usePropertyStore } from "@/store/property/use-property-store";
 
 export default function PropertyDetailPage() {
   const { id } = useParams();
-  const [data, setData] = useState<PropertyDto | null>(null);
+  const getPropertyById = usePropertyStore((s) => s.getPropertyById);
+  const [property, setProperty] = useState<PropertyDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
     let mounted = true;
     (async () => {
+      if (!id) {
+        setError("Invalid property id");
+        setLoading(false);
+        return;
+      }
       try {
-        const res = await http.get<PropertyDto>(`/property/${id}`);
-        if (mounted) setData(res);
+        setLoading(true);
+        const data = await getPropertyById(id);
+        if (mounted) setProperty(data);
       } catch (e: any) {
-        setError(e?.message ?? "Failed to load");
+        if (mounted) setError(e?.message ?? "Failed to load");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -28,15 +35,15 @@ export default function PropertyDetailPage() {
     return () => {
       mounted = false;
     };
-  }, [id]);
+  }, [id, getPropertyById]);
 
   if (loading) return <div className="p-6">Loading…</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
-  if (!data) return <div className="p-6">Not found</div>;
+  if (!property) return <div className="p-6">Not found</div>;
 
-  const imgs = data.imageUrls?.length
-    ? data.imageUrls
-    : ([data.thumbnailUrl].filter(Boolean) as string[]);
+  const imgs = property.imageUrls?.length
+    ? property.imageUrls
+    : ([property.thumbnailUrl].filter(Boolean) as string[]);
 
   return (
     <div className="bg-slate-50">
@@ -66,20 +73,24 @@ export default function PropertyDetailPage() {
             </div>
 
             <div className="mt-6 bg-white rounded-xl shadow p-5">
-              <h1 className="text-2xl font-bold">{data.title}</h1>
+              <h1 className="text-2xl font-bold">{property.title}</h1>
               <p className="text-slate-600 mt-1">
                 <MapPin className="inline mr-1 size-4" />
-                {data.location || data.address}
+                {property.location || property.address}
               </p>
 
               <div className="mt-4 flex flex-wrap gap-4 text-slate-700">
-                <Badge>Price: PKR {Number(data.price).toLocaleString()}</Badge>
-                <Badge>🛏 {data.bedrooms ?? "—"} Bed</Badge>
-                <Badge>🛁 {data.bathrooms ?? "—"} Bath</Badge>
-                <Badge>🚗 {data.carSpots ?? "—"}</Badge>
-                {data.sizeLabel && <Badge>{data.sizeLabel}</Badge>}
-                {data.status && <Badge>{data.status}</Badge>}
-                {data.propertyType && <Badge>{data.propertyType}</Badge>}
+                <Badge>
+                  Price: PKR {Number(property.price).toLocaleString()}
+                </Badge>
+                <Badge>🛏 {property.bedrooms ?? "—"} Bed</Badge>
+                <Badge>🛁 {property.bathrooms ?? "—"} Bath</Badge>
+                <Badge>🚗 {property.carSpots ?? "—"}</Badge>
+                {property.sizeLabel && <Badge>{property.sizeLabel}</Badge>}
+                {property.status && <Badge>{property.status}</Badge>}
+                {property.propertyType && (
+                  <Badge>{property.propertyType}</Badge>
+                )}
               </div>
 
               <div className="mt-6 prose max-w-none">
@@ -91,18 +102,27 @@ export default function PropertyDetailPage() {
               </div>
             </div>
 
-            {/* map placeholder */}
+            {/* map */}
             <div className="mt-6 bg-white rounded-xl shadow p-5">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Location</h3>
-                <a className="text-sm text-indigo-700 cursor-pointer">
+                <a
+                  className="text-sm text-indigo-700 cursor-pointer"
+                  href={
+                    property.lat && property.lng
+                      ? `https://www.google.com/maps?q=${property.lat},${property.lng}`
+                      : undefined
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Open in Google Maps
                 </a>
               </div>
               <div className="mt-3 h-64 w-full rounded-lg bg-slate-200 text-slate-600 flex items-center justify-center">
-                {data.lat && data.lng ? (
+                {property.lat && property.lng ? (
                   <span>
-                    Map preview at ({data.lat}, {data.lng})
+                    Map preview at ({property.lat}, {property.lng})
                   </span>
                 ) : (
                   <span>Map coming soon</span>
@@ -117,21 +137,23 @@ export default function PropertyDetailPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-2xl font-bold">
-                    PKR {Number(data.price).toLocaleString()}
+                    PKR {Number(property.price).toLocaleString()}
                   </div>
-                  {data.status && (
-                    <div className="text-slate-600">{data.status}</div>
+                  {property.status && (
+                    <div className="text-slate-600">{property.status}</div>
                   )}
                 </div>
-                <FavoriteButton property={data} />
+                <FavoriteButton property={property} />
               </div>
 
               <div className="mt-4 text-sm text-slate-700">
-                <div>Bedrooms: {data.bedrooms ?? "—"}</div>
-                <div>Bathrooms: {data.bathrooms ?? "—"}</div>
-                <div>Parking: {data.carSpots ?? "—"}</div>
-                {data.sizeLabel && <div>Size: {data.sizeLabel}</div>}
-                {data.propertyType && <div>Type: {data.propertyType}</div>}
+                <div>Bedrooms: {property.bedrooms ?? "—"}</div>
+                <div>Bathrooms: {property.bathrooms ?? "—"}</div>
+                <div>Parking: {property.carSpots ?? "—"}</div>
+                {property.sizeLabel && <div>Size: {property.sizeLabel}</div>}
+                {property.propertyType && (
+                  <div>Type: {property.propertyType}</div>
+                )}
               </div>
 
               <button className="mt-5 w-full rounded-lg bg-indigo-600 text-white py-2.5 hover:bg-indigo-700">

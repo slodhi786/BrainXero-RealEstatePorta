@@ -1,16 +1,17 @@
 import { http } from "@/services/api.service";
+import type { ApiResponse } from "@/types/api-response";
 import type { AuthResponse, RegisterDto, LoginDto } from "@/types/auth";
 
 export interface IAuthService {
-  register(dto: RegisterDto): Promise<AuthResponse>;
-  login(dto: LoginDto): Promise<AuthResponse>;
+  register(dto: Partial<RegisterDto>): Promise<ApiResponse<AuthResponse>>;
+  login(dto: Partial<LoginDto>): Promise<ApiResponse<AuthResponse>>;
 }
 
 export class AxiosAuthService implements IAuthService {
-  register(dto: RegisterDto) {
-    return http.post<AuthResponse>("/auth/register", dto);
+  async register(dto: Partial<RegisterDto>) {
+    return http.post<ApiResponse<AuthResponse>>("/auth/register", dto);
   }
-  login(dto: LoginDto) {
-    return http.post<AuthResponse>("/auth/login", dto);
+  async login(dto: Partial<LoginDto>) {
+    return http.post<ApiResponse<AuthResponse>>("/auth/login", dto);
   }
 }

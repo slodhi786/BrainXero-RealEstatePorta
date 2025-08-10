@@ -1,22 +1,23 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { persist } from "zustand/middleware";
 import { setAuthToken } from "@/services/api.service";
 import type { Services } from "@/di/services.context";
 import type { RegisterDto, LoginDto } from "@/types/auth";
+import type { UserDto } from "@/types/user";
+import { isOk } from "@/utils/api";
 
-export type UserInfo = { id: string; userName: string; email: string };
+export type UserInfo = UserDto;
 
 export type UserState = {
   user?: UserInfo;
   token?: string;
   isAuthenticated: boolean;
   loading: boolean;
-  error?: string;
+  message?: string;
   traceId?: string;
 
-  register: (dto: RegisterDto) => Promise<void>;
-  login: (dto: LoginDto) => Promise<void>;
+  register: (dto: RegisterDto) => Promise<boolean>;
+  login: (dto: LoginDto) => Promise<boolean>;
   logout: () => void;
   hydrateFromStorage: () => void;
 };
@@ -31,52 +32,88 @@ export function createUserStore(services: Services): StoreApi<UserState> {
         loading: false,
 
         register: async (dto) => {
-          set({ loading: true, error: undefined, traceId: undefined });
+          set({ loading: true, message: undefined });
           try {
             const res = await services.authService.register(dto);
-            setAuthToken(res.token);
-            localStorage.setItem("access_token", res.token);
+            const { statusCode, message } = res;
+            if (!isOk(statusCode)) {
+              set({
+                loading: false,
+                message: message,
+                isAuthenticated: false,
+                token: undefined,
+              });
+              setAuthToken(undefined);
+              localStorage.removeItem("access_token");
+              return false;
+            }
             set({
-              user: {
-                id: res.userId,
-                userName: res.userName,
-                email: res.email,
-              },
-              token: res.token,
-              isAuthenticated: true,
               loading: false,
+              message: message,
+              isAuthenticated: false,
+              token: undefined,
+              user: undefined,
             });
-          } catch (e: any) {
+            setAuthToken(undefined);
+            localStorage.removeItem("access_token");
+            return true;
+          } catch (e) {
             set({
               loading: false,
-              error: e?.message ?? "Registration failed",
-              traceId: (e as any)?.traceId,
+              message: "Registration failed | " + e,
+              isAuthenticated: false,
+              token: undefined,
             });
+            setAuthToken(undefined);
+            localStorage.removeItem("access_token");
+            return false;
           }
         },
 
         login: async (dto) => {
-          set({ loading: true, error: undefined, traceId: undefined });
+          set({ loading: true, message: undefined });
           try {
             const res = await services.authService.login(dto);
-            setAuthToken(res.token);
-            localStorage.setItem("access_token", res.token);
+            const { statusCode, message, data } = res;
+
+            if (!isOk(statusCode) || !data?.token) {
+              set({
+                loading: false,
+                message: message || "Sign-in failed",
+                isAuthenticated: false,
+                token: undefined,
+              });
+              setAuthToken(undefined);
+              localStorage.removeItem("access_token");
+              return false;
+            }
+
+            setAuthToken(data.token);
+            localStorage.setItem("access_token", data.token);
+
             set({
               user: {
-                id: res.userId,
-                userName: res.userName,
-                email: res.email,
+                id: data.userId,
+                userName: data.userName,
+                email: data.email,
               },
-              token: res.token,
+              token: data.token,
               isAuthenticated: true,
               loading: false,
+              message: undefined,
             });
-          } catch (e: any) {
+
+            return true;
+          } catch (e) {
             set({
               loading: false,
-              error: e?.message ?? "Sign-in failed",
-              traceId: (e as any)?.traceId,
+              message: "Sign-in failed | " + e,
+              isAuthenticated: false,
+              token: undefined,
             });
+            setAuthToken(undefined);
+            localStorage.removeItem("access_token");
+            return false;
           }
         },
 
@@ -87,7 +124,7 @@ export function createUserStore(services: Services): StoreApi<UserState> {
             user: undefined,
             token: undefined,
             isAuthenticated: false,
-            error: undefined,
+            message: undefined,
             traceId: undefined,
           });
         },
@@ -96,7 +133,11 @@ export function createUserStore(services: Services): StoreApi<UserState> {
           const token = localStorage.getItem("access_token") || get().token;
           if (token) {
             setAuthToken(token);
-            set({ token, isAuthenticated: !!get().user }); // user is persisted below
+            // isAuthenticated true only if we have both token and user
+            set({ token, isAuthenticated: !!get().user });
+          } else {
+            setAuthToken(undefined);
+            set({ token: undefined, isAuthenticated: false });
           }
         },
       }),

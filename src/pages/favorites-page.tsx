@@ -1,31 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useServices } from "@/di/use-services";
-import type { PropertyDto } from "@/types/property";
+import { usePropertyStore } from "@/store/property/use-property-store";
 
-const FALLBACK_IMG = "src/assets/images/placeholder-property.webp";
+const FALLBACK_IMG = "src/assets/images/fallback-property.png";
 
 export default function MyFavoritesPage() {
-  const { propertyService } = useServices();
-  const [items, setItems] = useState<PropertyDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>();
+  const { properties, loading, error, getFavorites } = usePropertyStore(
+    (s) => s
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const data = await propertyService.getMyFavorites();
-        setItems(Array.isArray(data) ? data : []);
-      } catch (e: any) {
-        setError(e?.message ?? "Failed to load favorites");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [propertyService]);
+    getFavorites();
+  }, [getFavorites]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -33,8 +20,10 @@ export default function MyFavoritesPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
           My Favorites
         </h1>
-        {!!items.length && (
-          <div className="text-sm text-slate-500">{items.length} saved</div>
+        {!!properties.length && (
+          <div className="text-sm text-slate-500">
+            {properties.length} saved
+          </div>
         )}
       </div>
 
@@ -72,7 +61,7 @@ export default function MyFavoritesPage() {
       )}
 
       {/* Empty state */}
-      {!loading && !error && items.length === 0 && (
+      {!loading && !error && properties.length === 0 && (
         <div className="rounded-2xl border bg-white p-8 md:p-12 text-center shadow-sm">
           <div className="mx-auto w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center">
             <span className="text-2xl">💜</span>
@@ -102,9 +91,9 @@ export default function MyFavoritesPage() {
       )}
 
       {/* Grid */}
-      {!loading && !error && items.length > 0 && (
+      {!loading && !error && properties.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-          {items.map((p) => {
+          {properties.map((p) => {
             const img = p.thumbnailUrl || p.imageUrls?.[0] || FALLBACK_IMG;
             return (
               <Link

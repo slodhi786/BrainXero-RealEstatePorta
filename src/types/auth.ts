@@ -9,9 +9,11 @@ export type LoginDto = {
 };
 
 export type AuthResponse = {
-  userId: string;
+  userId: string;       // Guid serialized
+  firstName: string;
+  lastName: string;
   userName: string;
   email: string;
-  token: string; //JWT
-  expiration: string; // ISO from server
+  token: string;
+  expiration: string;   // ISO from backend
 };

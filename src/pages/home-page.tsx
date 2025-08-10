@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePropertyStore } from "@/store/property/use-property-store";
@@ -14,8 +15,8 @@ function HomePageInner() {
     sortBy,
     sortOrder,
     loading,
-    error,
     traceId,
+    error,
     setPage,
     setPageSize,
     setSort,

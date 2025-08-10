@@ -1,4 +1,3 @@
-// src/providers/app-providers.tsx
 import React from "react";
 import { ServicesProvider } from "@/di/services.provider";
 import { UserStoreProvider } from "@/store/user/user-store.provider";

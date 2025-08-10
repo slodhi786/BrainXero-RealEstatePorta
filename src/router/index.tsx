@@ -6,7 +6,7 @@ import NotFoundPage from "@/pages/not-found-page";
 import RequireAuth from "@/components/require-auth";
 import LoginPage from "@/pages/auth/login-page";
 import RegisterPage from "@/pages/auth/register-page";
-import MyFavoritesPage from "@/pages/my-favorites-page";
+import MyFavoritesPage from "@/pages/favorites-page";
 
 export const router = createBrowserRouter([
   {

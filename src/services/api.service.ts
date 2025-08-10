@@ -47,7 +47,7 @@ api.interceptors.response.use(
     // Detect our ApiResponse<T> shape
     if (body && typeof (body as any).statusCode === "number") {
       const b = body as ApiResponse<any>;
-      if (b.statusCode >= 200 && b.statusCode < 300) return b.data as any;
+      if (b.statusCode >= 200 && b.statusCode < 300) return b;
       throw new ApiError(
         b.message ?? "Request failed",
         b.statusCode,

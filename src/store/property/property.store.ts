@@ -1,244 +1,226 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createStore } from "zustand/vanilla";
-import type { StoreApi } from "zustand/vanilla";
+import { createStore, type StoreApi } from "zustand/vanilla";
+import type { Services } from "@/di/services.context";
 import type { PropertyDto, PropertyQuery } from "@/types/property";
-import type { PagedResult } from "@/types/api";
-import type { Services } from "@/di/property/services.context";
-import { ApiError } from "@/services/api.service"; // if you created this typed error
+import type { PagedResult } from "@/types/paged-result";
+import type { ApiResponse } from "@/types/api-response";
+import { isOk } from "@/utils/api";
 
-type State = {
+export type PropertyState = PropertyQuery & {
   properties: PropertyDto[];
   totalCount: number;
-  page: number;
-  pageSize: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
   loading: boolean;
-  error?: string;
+  message?: string;
   traceId?: string;
-  selected?: PropertyDto | null;
-};
-
-type Actions = {
+  error?: string;
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setSort: (by: string, order: "asc" | "desc") => void;
-  resetList: () => void;
+  setFilter: (patch: Partial<PropertyQuery>) => void;
+  clearFilters: () => void;
 
-  fetchList: (extra?: Partial<PropertyQuery>) => Promise<void>;
-  fetchById: (id: string) => Promise<void>;
-
-  create: (dto: Partial<PropertyDto>) => Promise<PropertyDto | undefined>;
-  update: (
-    id: string,
-    dto: Partial<PropertyDto>
-  ) => Promise<PropertyDto | undefined>;
-  remove: (id: string) => Promise<boolean>;
-  toggleFavorite: (propertyId: string, currentUserId: string) => Promise<void>;
-  clearSelected: () => void;
+  fetchList: () => Promise<void>;
+  getPropertyById: (id: string) => Promise<PropertyDto | null>;
+  getFavorites: () => Promise<void>;
+  toggleFavorite: (id: string, current: boolean) => Promise<boolean>;
 };
 
-export type PropertyStore = State & Actions;
+const initial: PropertyState = {
+  q: "",
+  city: "",
+  type: "",
+  minPrice: null,
+  maxPrice: null,
+  bedrooms: null,
+  bathrooms: null,
+  sortBy: "price",
+  sortOrder: "desc",
+  page: 1,
+  pageSize: 9,
+  properties: [],
+  totalCount: 0,
+  loading: false,
+  error: undefined,
+  message: undefined,
+  traceId: undefined,
+
+  setPage: () => {},
+  setPageSize: () => {},
+  setSort: () => {},
+  setFilter: () => {},
+  clearFilters: () => {},
+
+  fetchList: async () => {},
+  getPropertyById: async () => null,
+  getFavorites: async () => {},
+  toggleFavorite: async () => false,
+};
 
 export function createPropertyStore(
   services: Services
-): StoreApi<PropertyStore> {
-  return createStore<PropertyStore>((set, get) => ({
-    properties: [],
-    totalCount: 0,
-    page: 1,
-    pageSize: 5,
-    sortBy: "bedrooms",
-    sortOrder: "desc",
-    loading: false,
-    selected: null,
+): StoreApi<PropertyState> {
+  const { propertyService } = services;
+
+  return createStore<PropertyState>()((set, get) => ({
+    ...initial,
 
     setPage: (page) => set({ page }),
-    setPageSize: (pageSize) => set({ pageSize }),
+    setPageSize: (pageSize) => set({ pageSize, page: 1 }),
     setSort: (sortBy, sortOrder) => set({ sortBy, sortOrder, page: 1 }),
-    resetList: () =>
+    setFilter: (patch) => set({ ...patch, page: 1 }),
+    clearFilters: () =>
       set({
+        ...initial,
         properties: [],
         totalCount: 0,
-        page: 1,
-        error: undefined,
-        traceId: undefined,
       }),
 
-    fetchList: async (extra) => {
-      const { page, pageSize, sortBy, sortOrder } = get();
-      set({ loading: true, error: undefined, traceId: undefined });
-      try {
-        const res = await services.propertyService.getList({
-          page,
-          pageSize,
-          sortBy,
-          sortOrder,
-          ...(extra ?? {}),
-        });
-        const { items, totalCount } = res as PagedResult<PropertyDto>;
-        set({ properties: items, totalCount, loading: false });
-      } catch (e: any) {
-        const err = e as ApiError;
-        set({
-          loading: false,
-          error: err?.message ?? "Failed to load",
-          traceId: (err as any)?.traceId,
-        });
-      }
-    },
-
-    fetchById: async (id: string) => {
-      set({
-        loading: true,
-        error: undefined,
-        traceId: undefined,
-        selected: null,
-      });
-      try {
-        const item = await services.propertyService.getById(id);
-        set({ selected: item, loading: false });
-      } catch (e: any) {
-        const err = e as ApiError;
-        set({
-          loading: false,
-          error: err?.message ?? "Failed to load",
-          traceId: (err as any)?.traceId,
-        });
-      }
-    },
-
-    create: async (dto) => {
-      set({ error: undefined, traceId: undefined });
-      try {
-        const created = await services.propertyService.create(dto);
-        // optimistic prepend
-        set((s) => ({
-          properties: [created, ...s.properties],
-          totalCount: s.totalCount + 1,
-        }));
-        return created;
-      } catch (e: any) {
-        const err = e as ApiError;
-        set({
-          error: err?.message ?? "Failed to create",
-          traceId: (err as any)?.traceId,
-        });
-      }
-    },
-
-    update: async (id, dto) => {
-      set({ error: undefined, traceId: undefined });
-      try {
-        const updated = await services.propertyService.update(id, dto);
-        set((s) => ({
-          properties: s.properties.map((p) => (p.id === id ? updated : p)),
-          selected: s.selected?.id === id ? updated : s.selected ?? null,
-        }));
-        return updated;
-      } catch (e: any) {
-        const err = e as ApiError;
-        set({
-          error: err?.message ?? "Failed to update",
-          traceId: (err as any)?.traceId,
-        });
-      }
-    },
-
-    remove: async (id) => {
-      set({ error: undefined, traceId: undefined });
-      const prev = get().properties;
-      // optimistic remove
-      set((s) => ({
-        properties: s.properties.filter((p) => p.id !== id),
-        totalCount: Math.max(0, s.totalCount - 1),
-      }));
-      try {
-        await services.propertyService.remove(id);
-        return true;
-      } catch (e: any) {
-        // rollback
-        set({ properties: prev });
-        const err = e as ApiError;
-        set({
-          error: err?.message ?? "Failed to delete",
-          traceId: (err as any)?.traceId,
-        });
-        return false;
-      }
-    },
-
-    toggleFavorite: async (propertyId: any, currentUserId: any) => {
+    fetchList: async () => {
       const s = get();
-      const prevList = s.properties;
-      const prevSelected = s.selected;
-      const isDetail = prevSelected?.id === propertyId;
-
-      // Is it currently favorited by this user?
-      const hasFavOnList = prevList.some(
-        (p) =>
-          p.id === propertyId &&
-          p.favoritedBy?.some(
-            (f: { userId: any }) => f.userId === currentUserId
-          )
-      );
-      const hasFavOnSelected =
-        isDetail &&
-        prevSelected?.favoritedBy?.some(
-          (f: { userId: any }) => f.userId === currentUserId
-        );
-      const willFavorite = !(hasFavOnList || hasFavOnSelected);
-
-      const apply = (p: PropertyDto): PropertyDto => {
-        const has = p.favoritedBy?.some(
-          (f: { userId: any }) => f.userId === currentUserId
-        );
-        if (willFavorite && !has) {
-          return {
-            ...p,
-            favoritedBy: [
-              ...(p.favoritedBy ?? []),
-              { userId: currentUserId, propertyId: p.id } as any,
-            ],
-          };
-        }
-        if (!willFavorite && has) {
-          return {
-            ...p,
-            favoritedBy: (p.favoritedBy ?? []).filter(
-              (f: { userId: any }) => f.userId !== currentUserId
-            ),
-          };
-        }
-        return p;
-      };
-
-      // optimistic update
-      set({
-        properties: prevList.map((p) => (p.id === propertyId ? apply(p) : p)),
-        selected:
-          isDetail && prevSelected ? apply(prevSelected) : s.selected ?? null,
-        error: undefined,
-        traceId: undefined,
-      });
-
+      set({ loading: true, message: undefined, traceId: undefined });
       try {
-        if (willFavorite) {
-          await services.propertyService.addFavorite(propertyId);
-        } else {
-          const ok = await services.propertyService.removeFavorite(propertyId);
-          if (!ok) throw new Error("Could not remove favorite");
+        const res: ApiResponse<PagedResult<PropertyDto>> =
+          await propertyService.getList({
+            q: s.q || undefined,
+            city: s.city || undefined,
+            type: s.type || undefined,
+            minPrice: s.minPrice ?? undefined,
+            maxPrice: s.maxPrice ?? undefined,
+            bedrooms: s.bedrooms ?? undefined,
+            bathrooms: s.bathrooms ?? undefined,
+            sortBy: s.sortBy,
+            sortOrder: s.sortOrder,
+            page: s.page,
+            pageSize: s.pageSize,
+          });
+
+        const { statusCode, message, data, traceId } = res;
+        if (!isOk(statusCode) || !data) {
+          set({ message: message || "Failed to fetch properties", traceId });
+          return;
         }
-      } catch (e: any) {
-        // rollback
-        set({ properties: prevList, selected: prevSelected });
+
         set({
-          error: e?.message ?? "Failed to update favorite",
-          traceId: (e as any)?.traceId,
+          properties: data.items ?? [],
+          totalCount: data.totalCount ?? 0,
+          page: data.page ?? s.page,
+          pageSize: data.pageSize ?? s.pageSize,
         });
+      } catch (e: any) {
+        set({
+          message:
+            e?.response?.data?.message ??
+            e?.message ??
+            "Failed to fetch properties",
+          traceId: e?.response?.data?.traceId ?? e?.traceId,
+        });
+      } finally {
+        set({ loading: false });
       }
     },
 
-    clearSelected: () => set({ selected: null }),
+    getFavorites: async () => {
+      set({ loading: true, message: undefined, traceId: undefined });
+      try {
+        const res = await propertyService.getFavorites();
+
+        const { statusCode, message, data, traceId } = res;
+        if (!isOk(statusCode) || !data) {
+          set({ message: message || "Failed to fetch properties", traceId });
+        }
+
+        set({
+          properties: data,
+        });
+      } catch (e: any) {
+        set({
+          message:
+            e?.response?.data?.message ??
+            e?.message ??
+            "Failed to fetch properties",
+          traceId: e?.response?.data?.traceId ?? e?.traceId,
+        });
+      } finally {
+        set({ loading: false });
+      }
+    },
+
+    getPropertyById: async (id: string) => {
+      set({ loading: true, message: undefined, traceId: undefined });
+      try {
+        const res = await propertyService.getById(id);
+        const { statusCode, message, data, traceId } = res;
+        if (!isOk(statusCode) || !data) {
+          set({ message: message || "Failed to fetch property", traceId });
+          return null;
+        }
+        return data;
+      } catch (e: any) {
+        set({
+          message:
+            e?.response?.data?.message ??
+            e?.message ??
+            "Failed to fetch property",
+          traceId: e?.response?.data?.traceId ?? e?.traceId,
+        });
+        return null;
+      } finally {
+        set({ loading: false });
+      }
+    },
+
+    toggleFavorite: async (id, current) => {
+      const next = !current;
+      const prev = get().properties;
+
+      // optimistic update in list
+      set({
+        properties: prev.map((p) =>
+          p.id === id ? { ...p, isFavorite: next } : p
+        ),
+      });
+
+      try {
+        if (next) {
+          const res = await propertyService.addFavorite(id);
+          if (!isOk(res.statusCode)) {
+            set({
+              properties: prev.map((p) =>
+                p.id === id ? { ...p, isFavorite: current } : p
+              ),
+              message: res.message || "Failed to add favorite",
+              traceId: res.traceId,
+            });
+            return current;
+          }
+          return next;
+        } else {
+          const res = await propertyService.removeFavorite(id);
+          if (!isOk(res.statusCode) || res.data !== true) {
+            set({
+              properties: prev.map((p) =>
+                p.id === id ? { ...p, isFavorite: current } : p
+              ),
+              message: res.message || "Failed to remove favorite",
+              traceId: res.traceId,
+            });
+            return current;
+          }
+          return next;
+        }
+      } catch (e: any) {
+        set({
+          properties: prev.map((p) =>
+            p.id === id ? { ...p, isFavorite: current } : p
+          ),
+          message:
+            e?.response?.data?.message ??
+            e?.message ??
+            "Failed to update favorite",
+          traceId: e?.response?.data?.traceId ?? e?.traceId,
+        });
+        return current;
+      }
+    },
   }));
 }

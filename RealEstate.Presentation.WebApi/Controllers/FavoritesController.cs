@@ -37,7 +37,7 @@ namespace RealEstate.Presentation.WebApi.Controllers
             var added = await _favoriteService.AddToFavoritesAsync(userId, propertyId);
 
             return added
-                ? Ok(ApiResponse<object>.Ok(null, "Added to favorites."))
+                ? Ok(ApiResponse<object>.Ok(added, "Added to favorites."))
                 : BadRequest(ApiResponse<object>.Fail(400, "Could not add favorite."));
         }
 

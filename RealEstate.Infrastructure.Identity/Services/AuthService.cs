@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using RealEstate.Application.DTOs.Auth;
 using RealEstate.Application.Interfaces;
 using RealEstate.Domain.Entities;
+using RealEstate.Presentation.Contracts.Common;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -21,25 +23,60 @@ namespace RealEstate.Infrastructure.Identity.Services
             _config = config;
         }
 
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+        public async Task<ApiResponse<AuthResponse>> RegisterAsync(RegisterRequest request)
         {
-            var user = new User { UserName = request.Email, Email = request.Email };
+            var user = new User
+            {
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                UserName = request.Email,
+                Email = request.Email
+            };
+
             var result = await _userManager.CreateAsync(user, request.Password);
 
             if (!result.Succeeded)
-                throw new ApplicationException(string.Join(", ", result.Errors.Select(e => e.Description)));
+            {
+                return new ApiResponse<AuthResponse>
+                {
+                    Success = false,
+                    Message = string.Join(", ", result.Errors.Select(e => e.Description)),
+                    StatusCode = StatusCodes.Status406NotAcceptable
+                };
+            }
 
-            return await GenerateJwtToken(user);
+            var token = await GenerateJwtToken(user);
+            return new ApiResponse<AuthResponse>
+            {
+                Success = true,
+                StatusCode = StatusCodes.Status200OK,
+                Message = "User registered successfully."
+            };
         }
 
-        public async Task<AuthResponse> LoginAsync(LoginRequest request)
+        public async Task<ApiResponse<AuthResponse>> LoginAsync(LoginRequest request)
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
-            if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
-                throw new ApplicationException("Invalid email or password.");
 
-            return await GenerateJwtToken(user);
+            if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
+                return new ApiResponse<AuthResponse>
+                {
+                    Success = false,
+                    StatusCode = StatusCodes.Status406NotAcceptable,
+                    Message = "Invalid email or password."
+                };
+
+            var token = await GenerateJwtToken(user);
+
+            return new ApiResponse<AuthResponse>
+            {
+                Success = true,
+                Data = token,
+                StatusCode = StatusCodes.Status200OK,
+                Message = "Signed in successfully."
+            };
         }
+
 
         private Task<AuthResponse> GenerateJwtToken(User user)
         {

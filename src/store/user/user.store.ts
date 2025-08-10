@@ -83,9 +83,10 @@ export function createUserStore(services: Services): StoreApi<UserState> {
             if (!isOk(statusCode) || !data?.token) {
               set({
                 loading: false,
-                message: message || "Sign-in failed",
+                message: message,
                 isAuthenticated: false,
                 token: undefined,
+                error: true,
               });
               setAuthToken(undefined);
               localStorage.removeItem("access_token");
@@ -107,15 +108,17 @@ export function createUserStore(services: Services): StoreApi<UserState> {
               isAuthenticated: true,
               loading: false,
               message: undefined,
+              error: false,
             });
 
             return true;
           } catch (e) {
             set({
               loading: false,
-              message: "Sign-in failed | " + e,
+              message: "" + e,
               isAuthenticated: false,
               token: undefined,
+              error: true,
             });
             setAuthToken(undefined);
             localStorage.removeItem("access_token");

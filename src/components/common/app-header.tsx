@@ -17,10 +17,6 @@ export default function AppHeader() {
         </Link>
 
         <nav className="flex items-center gap-4 text-sm">
-          <Link to="/favorites" className="text-indigo-700 hover:underline">
-            My Favorites
-          </Link>
-
           {!isAuth ? (
             <>
               <Link
@@ -38,6 +34,10 @@ export default function AppHeader() {
             </>
           ) : (
             <>
+              <Link to="/favorites" className="text-indigo-700 hover:underline">
+                My Favorites
+              </Link>
+
               <span className="hidden sm:inline text-slate-600">
                 Hi, {`${user?.firstName}  ${user?.lastName}`}
               </span>

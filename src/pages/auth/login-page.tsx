@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUserStore } from "@/store/user/use-user-store";
 
 export default function LoginPage() {
-  const { login, loading, error, traceId } = useUserStore((u) => u);
+  const { login, loading, error, message } = useUserStore((u) => u);
 
   const { state } = useLocation() as {
     state?: { email?: string; redirectTo?: string };
@@ -51,9 +51,9 @@ export default function LoginPage() {
               aria-live="polite"
             >
               {error}
-              {traceId && (
+              {message && (
                 <div className="mt-1 text-xs opacity-75">
-                  Trace ID: {traceId}
+                  {message}
                 </div>
               )}
             </div>

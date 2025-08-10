@@ -66,12 +66,12 @@ namespace RealEstate.Infrastructure.Identity.Services
                     Message = "Invalid email or password."
                 };
 
-            var token = await GenerateJwtToken(user);
+            var d = await GenerateJwtToken(user);
 
             return new ApiResponse<AuthResponse>
             {
                 Success = true,
-                Data = token,
+                Data = d,
                 StatusCode = StatusCodes.Status200OK,
                 Message = "Signed in successfully."
             };
@@ -102,6 +102,8 @@ namespace RealEstate.Infrastructure.Identity.Services
             {
                 UserId = user.Id,
                 UserName = user.UserName ?? user.Email!,
+                FirstName = user.FirstName!,
+                LastName = user.LastName!,
                 Email = user.Email!,
                 Token = new JwtSecurityTokenHandler().WriteToken(token),
                 Expiration = token.ValidTo

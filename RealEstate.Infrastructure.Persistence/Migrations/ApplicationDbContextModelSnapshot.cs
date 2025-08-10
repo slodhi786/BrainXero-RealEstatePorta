@@ -34,6 +34,8 @@ namespace RealEstate.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PropertyId");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("Favorites");
                 });
 
@@ -47,6 +49,9 @@ namespace RealEstate.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("AreaLabel")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Bathrooms")
                         .HasColumnType("int");
 
@@ -56,6 +61,9 @@ namespace RealEstate.Infrastructure.Persistence.Migrations
                     b.Property<int>("CarSpots")
                         .HasColumnType("int");
 
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -63,11 +71,32 @@ namespace RealEstate.Infrastructure.Persistence.Migrations
                     b.Property<string>("ImageUrls")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<double?>("Lat")
+                        .HasColumnType("float");
+
                     b.Property<int>("ListingType")
                         .HasColumnType("int");
 
+                    b.Property<double?>("Lng")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PropertyType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SizeLabel")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ThumbnailUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -92,12 +121,16 @@ namespace RealEstate.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -112,7 +145,6 @@ namespace RealEstate.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")

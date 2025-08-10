@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Seed\properties-seed.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -22,6 +26,10 @@
     <ProjectReference Include="..\RealEstate.Infrastructure.Persistence\RealEstate.Infrastructure.Persistence.csproj" />
     <ProjectReference Include="..\RealEstate.Infrastructure.Common\RealEstate.Infrastructure.Common.csproj" />
     <ProjectReference Include="..\RealEstate.Presentation.Contracts\RealEstate.Presentation.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Seed\properties-seed.json" />
   </ItemGroup>
 
 </Project>

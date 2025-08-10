@@ -14,6 +14,9 @@ using RealEstate.Presentation.Contracts.Common;
 using System.Reflection;
 using System.Text;
 
+using static RealEstate.Infrastructure.Persistence.Data.DbInitializer;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
@@ -31,7 +34,12 @@ builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 
 builder.Services.AddAutoMapper(typeof(RealEstate.Application.Mapping.MappingProfile));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -106,12 +114,30 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
 
 var app = builder.Build();
 
+app.UseStaticFiles();
 app.UseCors();
 
 // Seed sample data
-using var scope = app.Services.CreateScope();
-var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-DbInitializer.Seed(dbContext);
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Seed");
+
+    var seedSection = builder.Configuration.GetSection("Seed");
+    var options = new SeedOptions
+    {
+        FilePath = seedSection["FilePath"] ?? "Seed/properties-seed.json",
+        FallbackImage = seedSection["FallbackImage"] ?? "src/assets/images/placeholder-property.webp",
+        ValidateImages = bool.TryParse(seedSection["ValidateImages"], out var vi) ? vi : true,
+        MaxParallelChecks = int.TryParse(seedSection["MaxParallelChecks"], out var maxp) ? maxp : 8,
+        HeadTimeoutSeconds = int.TryParse(seedSection["HeadTimeoutSeconds"], out var ts) ? ts : 2
+    };
+
+    var contentRoot = app.Environment.ContentRootPath; // app root
+    var webRoot = app.Environment.WebRootPath ?? Path.Combine(contentRoot, "wwwroot");
+
+    await SeedAsync(db, logger, options, contentRoot, webRoot);
+}
 
 // Global Error Handling
 app.UseMiddleware<ErrorHandlingMiddleware>(app.Environment.IsDevelopment());

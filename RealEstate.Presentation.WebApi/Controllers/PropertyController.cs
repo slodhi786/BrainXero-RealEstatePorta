@@ -36,17 +36,17 @@ namespace RealEstate.Presentation.WebApi.Controllers
         }
 
         // GET: api/property/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(string id)
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id)
         {
-            if (!Guid.TryParse(id, out var guid))
-                return BadRequest(ApiResponse<object>.Fail(400, $"The value '{id}' is not a valid GUID."));
+            string? userId = null;
+            if (User?.Identity?.IsAuthenticated == true)
+                userId = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                      ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            var dto = await _propertyService.GetByIdAsync(guid);
-
-            return dto is not null 
-                ? Ok(ApiResponse<PropertyDto>.Ok(dto, "Property loaded.")) 
-                : Ok(ApiResponse<object>.Fail(404, "Property not found."));
+            var dto = await _propertyService.GetByIdAsync(id, userId);
+            if (dto == null) return NotFound(ApiResponse<object>.Fail(404, "Not found"));
+            return Ok(ApiResponse<PropertyDto>.Ok(dto, "Property fetched."));
         }
 
         // POST: api/property

@@ -24,53 +24,110 @@ namespace RealEstate.Infrastructure.Persistence.Services
             return _mapper.Map<List<PropertyDto>>(properties);
         }
 
-        public async Task<(IEnumerable<PropertyDto> Items, int TotalCount)> GetAllAsync(PropertyQueryParameters queryParams, string userId = null)
+        public async Task<(IEnumerable<PropertyDto> Items, int TotalCount)> GetAllAsync(PropertyQueryParameters p, string userId = null)
         {
-            var query = _db.Properties.AsQueryable();
+            var q = _db.Properties.AsQueryable();
 
-            // Sorting (unchanged)
-            if (!string.IsNullOrEmpty(queryParams.SortBy))
+            if (!string.IsNullOrWhiteSpace(p.Q))
+                q = q.Where(x => x.Title.Contains(p.Q) || x.Address!.Contains(p.Q) || x.City!.Contains(p.Q));
+
+            if (!string.IsNullOrWhiteSpace(p.City))
+                q = q.Where(x => x.City.Contains(p.City));
+
+            if (!string.IsNullOrWhiteSpace(p.Type))
+                q = q.Where(x => x.PropertyType == p.Type);
+
+            if (p.MinPrice.HasValue) q = q.Where(x => x.Price >= p.MinPrice.Value);
+            if (p.MaxPrice.HasValue) q = q.Where(x => x.Price <= p.MaxPrice.Value);
+            if (p.Bedrooms.HasValue) q = q.Where(x => x.Bedrooms >= p.Bedrooms.Value);
+            if (p.Bathrooms.HasValue) q = q.Where(x => x.Bathrooms >= p.Bathrooms.Value);
+
+            // sort
+            q = (p.SortBy?.ToLower(), p.SortOrder?.ToLower()) switch
             {
-                query = queryParams.SortBy.ToLower() switch
+                ("title", "asc") => q.OrderBy(x => x.Title),
+                ("title", _) => q.OrderByDescending(x => x.Title),
+                ("bedrooms", "asc") => q.OrderBy(x => x.Bedrooms),
+                ("bedrooms", _) => q.OrderByDescending(x => x.Bedrooms),
+                ("price", "asc") => q.OrderBy(x => x.Price),
+                _ => q.OrderByDescending(x => x.Price),
+            };
+
+            var total = await q.CountAsync();
+
+            var page = await q
+                .Skip((p.Page - 1) * p.PageSize)
+                .Take(p.PageSize)
+                .Select(x => new PropertyDto
                 {
-                    "title" => queryParams.SortOrder == "desc" ? query.OrderByDescending(p => p.Title) : query.OrderBy(p => p.Title),
-                    "price" => queryParams.SortOrder == "desc" ? query.OrderByDescending(p => p.Price) : query.OrderBy(p => p.Price),
-                    "bedrooms" => queryParams.SortOrder == "desc" ? query.OrderByDescending(p => p.Bedrooms) : query.OrderBy(p => p.Bedrooms),
-                    _ => queryParams.SortOrder == "desc" ? query.OrderByDescending(p => p.Price) : query.OrderBy(p => p.Price)
-                };
-            }
-
-            var totalCount = await query.CountAsync();
-
-            // Page first
-            var properties = await query
-                .Skip((queryParams.Page - 1) * queryParams.PageSize)
-                .Take(queryParams.PageSize)
+                    Id = x.Id,
+                    Title = x.Title,
+                    Address = x.Address,
+                    Location = string.IsNullOrEmpty(x.Location) ? x.Address : x.Location + ", " + x.City,
+                    City = x.City,
+                    Price = x.Price,
+                    Bedrooms = x.Bedrooms,
+                    Bathrooms = x.Bathrooms,
+                    CarSpots = x.CarSpots,
+                    SizeLabel = x.SizeLabel,
+                    AreaLabel = x.AreaLabel,
+                    Status = x.Status,
+                    ThumbnailUrl = x.ThumbnailUrl,
+                    ImageUrls = x.ImageUrls,
+                    Lat = x.Lat,
+                    Lng = x.Lng,
+                    PropertyType = x.PropertyType,
+                })
                 .ToListAsync();
 
-            // Get favorite ids for this user (if authenticated)
-            HashSet<Guid> favIds = new();
-            if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var userGuid))
+            // favorites
+            if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var uid))
             {
-                favIds = (await _db.Favorites
-                    .Where(f => f.UserId == userGuid) // now Guid == Guid
+                var favIds = await _db.Favorites
+                    .Where(f => f.UserId == uid)
                     .Select(f => f.PropertyId)
-                    .ToListAsync())
-                    .ToHashSet();
+                    .ToListAsync();
+
+                var favSet = favIds.ToHashSet();
+                foreach (var dto in page) dto.IsFavorite = favSet.Contains(dto.Id);
             }
 
-            // Map and set IsFavorite
-            var mapped = _mapper.Map<List<PropertyDto>>(properties);
-            foreach (var dto in mapped)
-                dto.IsFavorite = favIds.Contains(dto.Id);
-
-            return (mapped, totalCount);
+            return (page, total);
         }
 
-        public async Task<PropertyDto> GetByIdAsync(Guid id)
+        public async Task<PropertyDto> GetByIdAsync(Guid id, string userId = null)
         {
-            var property = await _db.Properties.FirstOrDefaultAsync(p => p.Id == id);
-            return property == null ? null : _mapper.Map<PropertyDto>(property);
+            var dto = await _db.Properties
+                .Where(x => x.Id == id)
+                .Select(x => new PropertyDto
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Address = x.Address,
+                    Location = string.IsNullOrEmpty(x.Location) ? x.Address : x.Location + ", " + x.City,
+                    City = x.City,
+                    Price = x.Price,
+                    Bedrooms = x.Bedrooms,
+                    Bathrooms = x.Bathrooms,
+                    CarSpots = x.CarSpots,
+                    SizeLabel = x.SizeLabel,
+                    AreaLabel = x.AreaLabel,
+                    Status = x.Status,
+                    ThumbnailUrl = x.ThumbnailUrl,
+                    ImageUrls = x.ImageUrls,
+                    Lat = x.Lat,
+                    Lng = x.Lng,
+                    PropertyType = x.PropertyType,
+                })
+                .FirstOrDefaultAsync();
+
+            if (dto == null) return null;
+
+            if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var uid))
+            {
+                dto.IsFavorite = await _db.Favorites.AnyAsync(f => f.UserId == uid && f.PropertyId == id);
+            }
+            return dto;
         }
 
         public async Task<PropertyDto> CreateAsync(CreatePropertyRequest request)

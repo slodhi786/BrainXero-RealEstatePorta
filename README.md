@@ -50,8 +50,8 @@ cd ../frontend
 # .env
 # VITE_API_URL=http://localhost:7047/api
 
-pnpm install   # or: npm install / yarn
-pnpm dev       # or: npm run dev / yarn dev
+npm install   # or: npm install / yarn
+npm dev       # or: npm run dev / yarn dev
 # Open http://localhost:5173
 ```
 

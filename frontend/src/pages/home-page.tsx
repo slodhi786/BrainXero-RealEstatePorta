@@ -60,9 +60,9 @@ function HomePageInner() {
       {/* HERO – background lives here, not on the page root */}
       <section className="relative">
         {/* BG image layer (full-bleed) */}
-        <div className="absolute inset-0 -z-10 bg-[url('https://zealous-bush-09a3b4d1e.1.azurestaticapps.net/bg1.webp')] bg-cover bg-center" />
+        <div className="absolute inset-0 -z-10" />
         {/* Contrast overlay */}
-        <div className="absolute inset-0 -z-10 bg-white/60" />
+        <div className="absolute inset-0 -z-10" />
 
         <div className="relative max-w-7xl mx-auto px-4 py-10 md:py-14">
           <div className="grid md:grid-cols-2 items-center gap-8">

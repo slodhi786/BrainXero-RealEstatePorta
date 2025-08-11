@@ -60,7 +60,7 @@ function HomePageInner() {
       {/* HERO – background lives here, not on the page root */}
       <section className="relative">
         {/* BG image layer (full-bleed) */}
-        <div className="absolute inset-0 -z-10 bg-[url('src/assets/images/bg1.webp')] bg-cover bg-center" />
+        <div className="absolute inset-0 -z-10 bg-[url('https://zealous-bush-09a3b4d1e.1.azurestaticapps.net/bg1.webp')] bg-cover bg-center" />
         {/* Contrast overlay */}
         <div className="absolute inset-0 -z-10 bg-white/60" />
 

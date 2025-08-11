@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { usePropertyStore } from "@/store/property/use-property-store";
 
-const FALLBACK_IMG = "src/assets/images/fallback-property.png";
+const FALLBACK_IMG = "https://zealous-bush-09a3b4d1e.1.azurestaticapps.net/fallback-property.png";
 
 export default function MyFavoritesPage() {
   const { properties, loading, error, getFavorites } = usePropertyStore(

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import localFallback from "@/assets/images/fallback-property.png";
+import localFallback from "https://zealous-bush-09a3b4d1e.1.azurestaticapps.net/fallback-property.png";
 
 type Props = React.ImgHTMLAttributes<HTMLImageElement> & {
   fallback?: string;

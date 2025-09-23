@@ -69,3 +69,8 @@ npm dev       # or: npm run dev / yarn dev
 ## License
 
 MIT (see repository license file).
+
+### Author
+- Saqib Lodhi
+- GitHub: @slodhi786
+- LinkedIn: www.linkedin.com/in/saqiblodhi

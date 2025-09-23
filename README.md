@@ -1,4 +1,4 @@
-# BrainXero – Real Estate Portal (Monorepo)
+# Real Estate Portal (Monorepo)
 
 This repository contains the complete **Real Estate Portal** solution organized as a monorepo with two top-level projects:
 

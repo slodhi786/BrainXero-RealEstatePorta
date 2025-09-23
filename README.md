@@ -12,7 +12,7 @@ Each project includes its **own `README.md`** with detailed setup, environment v
 ## Repository Structure
 
 ```
-BrainXero-RealEstatePorta/
+RealEstatePorta/
 ├─ backend/       # ASP.NET Core Web API
 │  └─ README.md   # Backend instructions & API notes
 ├─ frontend/      # React + Vite + TS client
